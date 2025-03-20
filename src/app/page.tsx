@@ -1,13 +1,18 @@
 'use client'
 
-import { useAdvocates } from '@/modules/advocates/useAdvocates'
 import { useSearchParams } from 'next/navigation'
 import { ChangeEvent, useState } from 'react'
+
+import { useAdvocates } from '@/modules/advocates/useAdvocates'
+
+import styles from './page.module.css'
+import { formatPhoneNumber } from '@/utils/phone'
+import { pluralize } from '@/utils/pluralize'
 
 export default function Home() {
 	const searchParams = useSearchParams()
 	const [query, setQuery] = useState(searchParams.get('query') || '')
-	const { advocates } = useAdvocates({ query })
+	const { advocates, loading } = useAdvocates({ query })
 
 	const onChange = (event: ChangeEvent<HTMLInputElement>) => {
 		const newQuery = event.target.value
@@ -31,52 +36,65 @@ export default function Home() {
 			}`
 		)
 	}
-	const onClick = () => setQuery('')
+	const resetSearch = () => setQuery('')
 
 	return (
-		<main style={{ margin: '24px' }}>
-			<h1>Solace Advocates</h1>
-			<br />
-			<br />
-			<div>
-				<p>Search</p>
-				<p>Searching for: {query}</p>
-				<input
-					style={{ border: '1px solid black' }}
-					onChange={onChange}
-					value={query}
-				/>
-				<button onClick={onClick}>Reset Search</button>
-			</div>
-			<br />
-			<br />
-			<table>
+		<main className={styles.page}>
+			<header>
+				<h1>Solace Advocates</h1>
+				<div className={styles.search}>
+					<input
+						placeholder="Search by name, speciality, phone, city..."
+						onChange={onChange}
+						value={query}
+					/>
+					{query && (
+						<button aria-label="reset search" onClick={resetSearch}>
+							×
+						</button>
+					)}
+					{!loading && query && (
+						<div className={styles.searchResults}>
+							{advocates.length} {pluralize(advocates.length, 'advocate')}
+						</div>
+					)}
+				</div>
+			</header>
+			<table className={styles.table}>
 				<thead>
-					<th>First Name</th>
-					<th>Last Name</th>
-					<th>City</th>
-					<th>Degree</th>
-					<th>Specialties</th>
-					<th>Years of Experience</th>
-					<th>Phone Number</th>
+					<tr>
+						<th className={styles.data}>Advocate</th>
+						<th>Specialities</th>
+					</tr>
 				</thead>
 				<tbody>
 					{advocates.map((advocate, index) => {
 						return (
 							<tr key={index}>
-								<td>{advocate.firstName}</td>
-								<td>{advocate.lastName}</td>
-								<td>{advocate.city}</td>
-								<td>{advocate.degree}</td>
-								<td>
-									{advocate.specialties
-										.sort((a, b) => a.localeCompare(b))
-										.map((s, i) => (
-											<div key={i}>{s}</div>
-										))}
+								<td className={styles.data}>
+									<div>
+										<div className={styles.name}>
+											{advocate.firstName} {advocate.lastName},{' '}
+											{advocate.degree}{' '}
+										</div>
+										<div className={styles.info}>
+											{advocate.city}・{formatPhoneNumber(advocate.phoneNumber)}
+										</div>
+										<div className={styles.experience}>
+											{advocate.yearsOfExperience}{' '}
+											{pluralize(advocate.yearsOfExperience, 'year')}
+										</div>
+									</div>
 								</td>
-								<td>{advocate.yearsOfExperience}</td>
-								<td>{advocate.phoneNumber}</td>
+								<td>
+									<ul>
+										{advocate.specialties
+											.sort((a, b) => a.localeCompare(b))
+											.map((s, i) => (
+												<li key={i}>{s}</li>
+											))}
+									</ul>
+								</td>
 							</tr>
 						)
 					})}

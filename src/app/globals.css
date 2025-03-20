@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	--color-background: #fafafa;
+	--color-text-primary: #111;
+	--color-text-secondary: #777;
+	--color-divider: #ddd;
+	--color-accent: #fada5e;
+
+	--border-radius-control: 5px;
+
+	--font-size-title: 32px;
+	--font-size-large: 20px;
+	--font-size-body: 16px;
+	--font-size-small: 12px;
+}
+
+body {
+	background-color: var(--color-background);
+	padding: 0;
+	color: var(--color-text-primary);
+}
+
+* {
+	box-sizing: border-box;
+	font-size: var(--font-size-body);
+}

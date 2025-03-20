@@ -58,7 +58,7 @@ export default function Home() {
 								×
 							</button>
 						)}
-						{query && (
+						{query && !loading && (
 							<div className={styles.searchResults}>
 								{advocates.length} {pluralize(advocates.length, 'advocate')}
 							</div>

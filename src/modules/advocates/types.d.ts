@@ -1,5 +1,6 @@
 declare module 'Types' {
 	interface IAdvocate {
+		id: string
 		firstName: string
 		lastName: string
 		city: string

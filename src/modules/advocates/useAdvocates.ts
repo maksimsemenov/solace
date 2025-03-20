@@ -7,22 +7,25 @@ interface IUseAdvocatesProps {
 
 interface IUseAdvocates {
 	advocates: IAdvocate[]
+	loading: boolean
 }
 
 export const useAdvocates = ({ query }: IUseAdvocatesProps): IUseAdvocates => {
+	const [loading, setLoading] = useState(true)
 	const [advocates, setAdvocates] = useState<IAdvocate[]>([])
 
 	useEffect(() => {
-		console.log('fetching advocates...')
-		fetch('/api/advocates').then((response) => {
-			response.json().then((jsonResponse) => {
-				setAdvocates(jsonResponse.data)
+		fetch('/api/advocates')
+			.then((response) => {
+				response.json().then((jsonResponse) => {
+					setAdvocates(jsonResponse.data)
+				})
 			})
-		})
+			.finally(() => setLoading(false))
 	}, [])
 
 	const filteredAdvocates = useMemo(() => {
-		if (!query) return advocates
+		if (!query) return advocates.sort(sortAdvocates)
 
 		const queryParts = query.toLowerCase().split(/[ -\W]/)
 		const result: IAdvocate[] = []
@@ -42,15 +45,18 @@ export const useAdvocates = ({ query }: IUseAdvocatesProps): IUseAdvocates => {
 			}
 		}
 
-		return result.sort((a, b) => {
-			const years = b.yearsOfExperience - a.yearsOfExperience
-			if (years) return years
-
-			return a.firstName.localeCompare(b.firstName)
-		})
+		return result.sort(sortAdvocates)
 	}, [advocates, query])
 
 	return {
-		advocates: filteredAdvocates
+		advocates: filteredAdvocates,
+		loading
 	}
+}
+
+const sortAdvocates = (a: IAdvocate, b: IAdvocate): number => {
+	const years = b.yearsOfExperience - a.yearsOfExperience
+	if (years) return years
+
+	return a.firstName.localeCompare(b.firstName)
 }

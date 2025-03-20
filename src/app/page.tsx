@@ -8,6 +8,10 @@ import { useAdvocates } from '@/modules/advocates/useAdvocates'
 import styles from './page.module.css'
 import { formatPhoneNumber } from '@/utils/phone'
 import { pluralize } from '@/utils/pluralize'
+import {
+	HighlightedContext,
+	HighlightedText
+} from '@/components/HighlightedText'
 
 export default function Home() {
 	const searchParams = useSearchParams()
@@ -39,67 +43,78 @@ export default function Home() {
 	const resetSearch = () => setQuery('')
 
 	return (
-		<main className={styles.page}>
-			<header>
-				<h1>Solace Advocates</h1>
-				<div className={styles.search}>
-					<input
-						placeholder="Search by name, speciality, phone, city..."
-						onChange={onChange}
-						value={query}
-					/>
-					{query && (
-						<button aria-label="reset search" onClick={resetSearch}>
-							×
-						</button>
-					)}
-					{!loading && query && (
-						<div className={styles.searchResults}>
-							{advocates.length} {pluralize(advocates.length, 'advocate')}
-						</div>
-					)}
-				</div>
-			</header>
-			<table className={styles.table}>
-				<thead>
-					<tr>
-						<th className={styles.data}>Advocate</th>
-						<th>Specialities</th>
-					</tr>
-				</thead>
-				<tbody>
-					{advocates.map((advocate, index) => {
-						return (
-							<tr key={index}>
-								<td className={styles.data}>
-									<div>
-										<div className={styles.name}>
-											{advocate.firstName} {advocate.lastName},{' '}
-											{advocate.degree}{' '}
+		<HighlightedContext.Provider value={query}>
+			<main className={styles.page}>
+				<header>
+					<h1>Solace Advocates</h1>
+					<div className={styles.search}>
+						<input
+							placeholder="Search by name, speciality, phone, city..."
+							onChange={onChange}
+							value={query}
+						/>
+						{query && (
+							<button aria-label="reset search" onClick={resetSearch}>
+								×
+							</button>
+						)}
+						{query && (
+							<div className={styles.searchResults}>
+								{advocates.length} {pluralize(advocates.length, 'advocate')}
+							</div>
+						)}
+					</div>
+				</header>
+				<table className={styles.table}>
+					<thead>
+						<tr>
+							<th className={styles.data}>Advocate</th>
+							<th>Experience</th>
+						</tr>
+					</thead>
+					<tbody>
+						{advocates.map((advocate, index) => {
+							return (
+								<tr key={index}>
+									<td className={styles.data}>
+										<div>
+											<div className={styles.name}>
+												<HighlightedText>
+													{`${advocate.firstName} ${advocate.lastName}, ${advocate.degree}`}
+												</HighlightedText>
+											</div>
+											<div className={styles.info}>
+												<HighlightedText>
+													{`${advocate.city}・${formatPhoneNumber(
+														advocate.phoneNumber
+													)}`}
+												</HighlightedText>
+											</div>
+											<div className={styles.experience}>
+												{`${advocate.yearsOfExperience} ${pluralize(
+													advocate.yearsOfExperience,
+													'year'
+												)}`}
+											</div>
 										</div>
-										<div className={styles.info}>
-											{advocate.city}・{formatPhoneNumber(advocate.phoneNumber)}
-										</div>
-										<div className={styles.experience}>
-											{advocate.yearsOfExperience}{' '}
-											{pluralize(advocate.yearsOfExperience, 'year')}
-										</div>
-									</div>
-								</td>
-								<td>
-									<ul>
-										{advocate.specialties
-											.sort((a, b) => a.localeCompare(b))
-											.map((s, i) => (
-												<li key={i}>{s}</li>
-											))}
-									</ul>
-								</td>
-							</tr>
-						)
-					})}
-				</tbody>
-			</table>
-		</main>
+									</td>
+									<td>
+										<ul>
+											{advocate.specialties
+												.sort((a, b) => a.localeCompare(b))
+												.map((s, i) => (
+													<li key={i}>
+														<HighlightedText>{s}</HighlightedText>
+													</li>
+												))}
+										</ul>
+									</td>
+								</tr>
+							)
+						})}
+					</tbody>
+				</table>
+			</main>
+		</HighlightedContext.Provider>
 	)
 }

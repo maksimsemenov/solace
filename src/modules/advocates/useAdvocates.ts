@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import { keyBy, throttle } from 'lodash'
+
+import { sortAdvocates } from '../utils/sort'
+import { filterAdvocates } from '../utils/filter'
+
 import { IAdvocate } from 'Types'
 
 interface IUseAdvocatesProps {
@@ -10,53 +15,41 @@ interface IUseAdvocates {
 	loading: boolean
 }
 
+const throttledFetch = throttle(
+	(...args: Parameters<typeof fetch>) =>
+		fetch(...args).then((response) => response.json()),
+	300
+)
+
 export const useAdvocates = ({ query }: IUseAdvocatesProps): IUseAdvocates => {
-	const [loading, setLoading] = useState(true)
-	const [advocates, setAdvocates] = useState<IAdvocate[]>([])
+	const [loading, setLoading] = useState(false)
+	const [advocates, setAdvocates] = useState<Record<string, IAdvocate>>({})
 
 	useEffect(() => {
-		fetch('/api/advocates')
+		setLoading(true)
+		// We want to optimize load on our server (and save a bit traffic for the user)
+		// so we thrttle requests, to not query dat aon each key press.
+		// But, to provide a more real-time feed back for the user, we still filter
+		// client-side cache of advocates on each key press.
+		throttledFetch(`/api/advocates${query ? `?query=${query}` : ''}`)
 			.then((response) => {
-				response.json().then((jsonResponse) => {
-					setAdvocates(jsonResponse.data)
-				})
+				setAdvocates((_advocates) => ({
+					..._advocates,
+					...keyBy(response.data, 'id')
+				}))
 			})
 			.finally(() => setLoading(false))
-	}, [])
+	}, [query])
 
 	const filteredAdvocates = useMemo(() => {
-		if (!query) return advocates.sort(sortAdvocates)
+		const advocatesList = Object.values(advocates)
+		if (!query) return advocatesList.sort(sortAdvocates)
 
-		const queryParts = query.toLowerCase().split(/[ -\W]/)
-		const result: IAdvocate[] = []
-
-		for (const advocate of advocates) {
-			const match = queryParts.every(
-				(part) =>
-					advocate.firstName.toLowerCase().includes(part) ||
-					advocate.lastName.toLowerCase().includes(part) ||
-					advocate.city.toLowerCase().includes(part) ||
-					advocate.degree.toLowerCase().includes(part) ||
-					advocate.specialties.some((s) => s.toLowerCase().includes(part)) ||
-					advocate.phoneNumber.toString().includes(part)
-			)
-			if (match) {
-				result.push(advocate)
-			}
-		}
-
-		return result.sort(sortAdvocates)
+		return filterAdvocates(advocatesList, query).sort(sortAdvocates)
 	}, [advocates, query])
 
 	return {
 		advocates: filteredAdvocates,
 		loading
 	}
-}
-
-const sortAdvocates = (a: IAdvocate, b: IAdvocate): number => {
-	const years = b.yearsOfExperience - a.yearsOfExperience
-	if (years) return years
-
-	return a.firstName.localeCompare(b.firstName)
 }
